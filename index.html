@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centry Agent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .chat-container {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20%;
+        }
+        .agent-message {
+            background-color: #f1f1f1;
+            margin-right: 20%;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        #query-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Centry Agent</h1>
+    <div class="chat-container" id="chat-container">
+        <div class="message agent-message">
+            Hello! I'm Centry Agent. I can provide information about Cybercentry's marketplace, penetration testing, and vulnerability scanning services. How can I help you today?
+        </div>
+    </div>
+    <div class="input-container">
+        <input type="text" id="query-input" placeholder="Ask about our services...">
+        <button onclick="sendQuery()">Send</button>
+    </div>
+
+    <script>
+        async function sendQuery() {
+            const queryInput = document.getElementById('query-input');
+            const query = queryInput.value.trim();
+            
+            if (!query) return;
+            
+            // Add user message to chat
+            addMessage(query, 'user');
+            queryInput.value = '';
+            
+            try {
+                // Show loading message
+                const loadingId = addMessage('Processing your request...', 'agent', true);
+                
+                // Send request to API
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                // Remove loading message
+                removeMessage(loadingId);
+                
+                // Add agent response
+                if (data.status === 'success') {
+                    addMessage(data.message, 'agent');
+                } else {
+                    addMessage(`Error: ${data.message}`, 'agent');
+                }
+            } catch (error) {
+                addMessage(`Sorry, there was an error processing your request: ${error.message}`, 'agent');
+            }
+        }
+        
+        function addMessage(text, type, isLoading = false) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            messageDiv.textContent = text;
+            
+            const messageId = Date.now().toString();
+            messageDiv.id = messageId;
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            return isLoading ? messageId : null;
+        }
+        
+        function removeMessage(messageId) {
+            if (!messageId) return;
+            const message = document.getElementById(messageId);
+            if (message) message.remove();
+        }
+        
+        // Allow Enter key to send message
+        document.getElementById('query-input').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendQuery();
+            }
+        });
+    </script>
+</body>
+</html>
